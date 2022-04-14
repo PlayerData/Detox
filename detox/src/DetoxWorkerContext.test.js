@@ -9,15 +9,6 @@ jest.mock('./invoke');
 jest.mock('./utils/wrapWithStackTraceCutter');
 jest.mock('./environmentFactory');
 
-jest.mock('./server/DetoxServer', () => {
-  const FakeServer = jest.genMockFromModule('./server/DetoxServer');
-  return jest.fn().mockImplementation(() => {
-    const server =  new FakeServer();
-    server.port = 12345;
-    return server;
-  });
-});
-
 describe('Detox', () => {
   const fakeCookie = {
     chocolate: 'yum',
@@ -50,7 +41,6 @@ describe('Detox', () => {
   let logger;
   let Client;
   let AsyncEmitter;
-  let DetoxServer;
   let invoke;
   let envValidator;
   let deviceAllocator;
@@ -89,10 +79,9 @@ describe('Detox', () => {
     invoke = require('./invoke');
     Client = require('./client/Client');
     AsyncEmitter = require('./utils/AsyncEmitter');
-    DetoxServer = require('./server/DetoxServer');
     lifecycleSymbols = require('../runners/integration').lifecycle;
 
-    Detox = require('./Detox');
+    Detox = require('./DetoxWorkerContext');
   });
 
   describe('when detox.init() is called', () => {
@@ -118,15 +107,9 @@ describe('Detox', () => {
     describe('', () => {
       beforeEach(init);
 
-      it('should create a DetoxServer automatically', () =>
-        expect(DetoxServer).toHaveBeenCalledWith({
-          port: 0,
-          standalone: false,
-        }));
-
-      it('should create a new Client', () =>
+      it('should create a new Client with a random sessionId', () =>
         expect(Client).toHaveBeenCalledWith(expect.objectContaining({
-          server: 'ws://localhost:12345',
+          server: process.env.DETOX_WSS_ADDRESS,
           sessionId: expect.any(String),
         })));
 
@@ -249,25 +232,6 @@ describe('Detox', () => {
         expect(runtimeDevice.selectApp.mock.calls[1]).toEqual(['extraApp']);
         expect(runtimeDevice.selectApp.mock.calls[2]).toEqual([null]);
       });
-    });
-
-    describe('with sessionConfig.autoStart undefined', () => {
-      beforeEach(() => { delete detoxConfig.sessionConfig.autoStart; });
-      beforeEach(init);
-
-      it('should not start DetoxServer', () =>
-        expect(DetoxServer).not.toHaveBeenCalled());
-    });
-
-    describe('with sessionConfig.server custom URL', () => {
-      beforeEach(() => { detoxConfig.sessionConfig.server = 'ws://localhost:451'; });
-      beforeEach(init);
-
-      it('should create a DetoxServer using the port from that URL', () =>
-        expect(DetoxServer).toHaveBeenCalledWith({
-          port: '451',
-          standalone: false,
-        }));
     });
 
     describe('with behaviorConfig.init.exposeGlobals = false', () => {

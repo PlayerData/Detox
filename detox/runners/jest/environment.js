@@ -48,8 +48,7 @@ class DetoxCircusEnvironment extends NodeEnvironment {
     await super.setup();
 
     this.global.detox = require('../../src')
-      ._setGlobal(this.global)
-      ._suppressLoggingInitErrors();
+      ._setGlobal(this.global);
   }
 
   async teardown() {

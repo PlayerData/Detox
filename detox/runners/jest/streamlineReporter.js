@@ -1,1 +1,1 @@
-module.exports = require('../jest-circus/reporter');
+module.exports = require('./reporter');
